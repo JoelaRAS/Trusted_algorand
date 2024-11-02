@@ -1,0 +1,149 @@
+from pyteal import *
+
+def approval_program():
+    # Global state keys
+    project_id = Bytes("project_id")           # ID unique du projet
+    owner = Bytes("owner")                     # Adresse du créateur du projet
+    status = Bytes("status")                   # Statut actuel du projet
+    winning_bid_id = Bytes("winning_bid_id")   # Identifiant du devis gagnant
+    funding_goal = Bytes("funding_goal")       # Objectif de financement
+    total_contributed = Bytes("total_contributed")  # Total des fonds collectés
+    funding_period_end = Bytes("funding_period_end")  # Fin de la période de financement
+    milestones = Bytes("milestones")           # JSON des milestones et coûts associés
+    current_milestone = Bytes("current_milestone")    # Milestone actuel à valider
+    project_category = Bytes("category")       # Catégorie du projet
+    project_impact = Bytes("impact")           # Impact attendu
+    project_location = Bytes("location")       # Emplacement du projet
+    project_budget_total = Bytes("budget_total")  # Budget total
+
+    # Possible statuses
+    STATUS_BIDDING = Int(0)
+    STATUS_FUNDING = Int(1)
+    STATUS_IN_PROGRESS = Int(2)
+    STATUS_CANCELLED = Int(3)
+    STATUS_COMPLETED = Int(4)
+
+    # Soumission du projet
+    def submit_project():
+        project_title = Txn.application_args[1]
+        project_description = Txn.application_args[2]
+        project_category_data = Txn.application_args[3]
+        project_impact_data = Txn.application_args[4]
+        project_location_data = Txn.application_args[5]
+        
+        return Seq(
+            App.globalPut(project_id, Txn.application_id()),
+            App.globalPut(owner, Txn.sender()),
+            App.globalPut(status, STATUS_BIDDING),
+            App.globalPut(Bytes("title"), project_title),
+            App.globalPut(Bytes("description"), project_description),
+            App.globalPut(project_category, project_category_data),
+            App.globalPut(project_impact, project_impact_data),
+            App.globalPut(project_location, project_location_data),
+            Approve()
+        )
+
+    # Soumission d'un devis par un prestataire, incluant les milestones
+    def submit_bid():
+        bid_id = Txn.application_args[1]
+        bid_amount = Btoi(Txn.application_args[2])
+        funding_period = Btoi(Txn.application_args[3])
+        milestone_data = Txn.application_args[4]  # JSON des milestones
+        
+        return Seq(
+            Assert(App.globalGet(status) == STATUS_BIDDING),
+            App.localPut(Int(0), Bytes("bid_id"), bid_id),
+            App.localPut(Int(0), Bytes("bid_amount"), bid_amount),
+            App.localPut(Int(0), Bytes("funding_period"), funding_period),
+            App.globalPut(milestones, milestone_data),
+            App.globalPut(project_budget_total, bid_amount),
+            Approve()
+        )
+
+    # Vote pour un devis
+    def vote_for_bid():
+        bid_id = Txn.application_args[1]
+        return Seq(
+            Assert(App.globalGet(status) == STATUS_BIDDING),
+            App.localPut(Int(0), Bytes("voted_for"), bid_id),
+            Approve()
+        )
+
+    # Sélection du devis gagnant
+    def select_winning_bid():
+        bid_id = Txn.application_args[1]
+        bid_amount = Btoi(Txn.application_args[2])
+        return Seq(
+            Assert(App.globalGet(status) == STATUS_BIDDING),
+            App.globalPut(winning_bid_id, bid_id),
+            App.globalPut(funding_goal, bid_amount),
+            App.globalPut(status, STATUS_FUNDING),
+            Approve()
+        )
+
+    # Contribution au projet avec preuve de don
+    def contribute():
+        donor_id = Txn.sender()
+        amount = Gtxn[1].amount()
+        return Seq(
+            Assert(App.globalGet(status) == STATUS_FUNDING),
+            App.localPut(donor_id, Bytes("contribution"), amount),
+            App.globalPut(total_contributed, App.globalGet(total_contributed) + amount),
+            Approve()
+        )
+
+    # Remboursement des fonds si le financement n'atteint pas l'objectif
+    def refund_contributions():
+        return Seq(
+            Assert(App.globalGet(total_contributed) < App.globalGet(funding_goal)),
+            App.globalPut(status, STATUS_CANCELLED),
+            Approve()
+        )
+
+    # Validation d'un milestone avec preuve d'avancement
+    def validate_milestone():
+        milestone_id = Btoi(Txn.application_args[1])  # Indice du milestone à valider
+        milestone_cost = Btoi(Txn.application_args[2])  # Coût associé au milestone
+        
+        return Seq(
+            Assert(App.globalGet(status) == STATUS_IN_PROGRESS),
+            Assert(milestone_id == App.globalGet(current_milestone)),
+            App.globalPut(total_contributed, App.globalGet(total_contributed) - milestone_cost),
+            App.globalPut(current_milestone, App.globalGet(current_milestone) + Int(1)),
+            App.localPut(Txn.sender(), Bytes("milestone_progress"), milestone_id),  # Preuve d'avancement
+            Approve()
+        )
+
+    # Terminer le projet et envoyer la preuve de don à chaque donateur
+    def complete_project():
+        return Seq(
+            Assert(App.globalGet(total_contributed) >= App.globalGet(funding_goal)),
+            App.globalPut(status, STATUS_COMPLETED),
+            Approve()
+        )
+
+    program = Cond(
+        [Txn.application_id() == Int(0), submit_project()],
+        [Txn.on_completion() == OnComplete.NoOp, Cond(
+            [Txn.application_args[0] == Bytes("submit_bid"), submit_bid()],
+            [Txn.application_args[0] == Bytes("vote_for_bid"), vote_for_bid()],
+            [Txn.application_args[0] == Bytes("select_winning_bid"), select_winning_bid()],
+            [Txn.application_args[0] == Bytes("contribute"), contribute()],
+            [Txn.application_args[0] == Bytes("refund_contributions"), refund_contributions()],
+            [Txn.application_args[0] == Bytes("validate_milestone"), validate_milestone()],
+            [Txn.application_args[0] == Bytes("complete_project"), complete_project()]
+        )]
+    )
+
+    return program
+
+def clear_state_program():
+    return Approve()
+
+if __name__ == "__main__":
+    compiled_approval = compileTeal(approval_program(), mode=Mode.Application, version=5)
+    compiled_clear = compileTeal(clear_state_program(), mode=Mode.Application, version=5)
+    with open("approval.teal", "w") as f:
+        f.write(compiled_approval)
+    with open("clear.teal", "w") as f:
+        f.write(compiled_clear)
