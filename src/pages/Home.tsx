@@ -1,6 +1,6 @@
 import React from "react";
 import ProjectCard from "@/components/ProjectCard";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
@@ -15,20 +15,36 @@ const Home = () => {
       status: "En financement" as const,
       currentAmount: 5000,
       targetAmount: 10000,
+      description: "Installation de panneaux solaires pour une école rurale.",
+      category: "Énergie",
+      impact: "Accès à l'électricité",
+      location: "Rural",
     },
     {
       id: "2",
       title: "Potager Communautaire",
       summary: "Création d'un potager communautaire pour favoriser l'autonomie alimentaire et le lien social.",
       status: "Appel d'offre" as const,
+      currentAmount: 0,
       targetAmount: 8000,
+      description: "Création d'un potager communautaire.",
+      category: "Agriculture",
+      impact: "Autonomie alimentaire",
+      location: "Communautaire",
+      provider: "Médecins Sans Frontières",
+      lastUpdate: "Étape 2/4 terminée",
     },
     {
       id: "3",
       title: "Centre Médical Mobile",
       summary: "Équipement d'une clinique mobile pour des soins médicaux dans les zones rurales.",
       status: "En cours" as const,
+      currentAmount: 0,
       targetAmount: 15000,
+      description: "Équipement d'une clinique mobile.",
+      category: "Santé",
+      impact: "Soins médicaux",
+      location: "Rural",
       provider: "Médecins Sans Frontières",
       lastUpdate: "Étape 2/4 terminée",
     },

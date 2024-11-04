@@ -12,20 +12,6 @@ export const ExecutionPhase = ({ project }: ExecutionPhaseProps) => {
     <div className="space-y-6">
       <Card>
         <CardContent className="pt-6">
-          <h3 className="text-xl font-semibold mb-4">Documents du projet</h3>
-          <div className="space-y-4">
-            <Button variant="outline" className="w-full">
-              Voir le devis retenu (PDF)
-            </Button>
-            <Button variant="outline" className="w-full">
-              Voir le contrat signé (PDF)
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="pt-6">
           <h3 className="text-xl font-semibold mb-4">Récapitulatif du devis</h3>
           <div className="space-y-4">
             <div>

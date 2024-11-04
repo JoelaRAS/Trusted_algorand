@@ -25,8 +25,10 @@ export const FundingPhase = ({ project }: FundingPhaseProps) => {
   const displayedDonors = showAllDonors ? filteredDonors : filteredDonors.slice(0, 5);
 
   const handleDonate = (amount: number) => {
-    // Simulate donation logic
-    console.log(`Donated ${amount} €`);
+    // Ajouter le don au projet (simulation)
+    const amountInEuros = amount * 1.5; // Exemple de conversion Algorand -> Euros
+    project.currentAmount += amountInEuros;
+    project.donateurs.push({ id: (project.donateurs.length + 1).toString(), name: "Nouveau Donateur", amount: amountInEuros });
   };
 
   return (
@@ -38,20 +40,6 @@ export const FundingPhase = ({ project }: FundingPhaseProps) => {
           <div className="flex justify-between">
             <span>{project.currentAmount.toLocaleString()} €</span>
             <span>{project.targetAmount.toLocaleString()} €</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-xl font-semibold mb-4">Documents du projet</h3>
-          <div className="space-y-4">
-            <Button variant="outline" className="w-full">
-              Voir le devis retenu (PDF)
-            </Button>
-            <Button variant="outline" className="w-full">
-              Voir le contrat signé (PDF)
-            </Button>
           </div>
         </CardContent>
       </Card>

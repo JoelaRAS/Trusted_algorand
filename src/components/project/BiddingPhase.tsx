@@ -16,7 +16,12 @@ export const BiddingPhase = ({ project }: BiddingPhaseProps) => {
   const handleSubmitBid = (devis: { prestataire: string; description: string; budget: number }) => {
     toast({ title: "Devis soumis", description: "Votre devis a été soumis avec succès." });
     // Ajouter le devis au projet (simulation)
-    project.devis.push({ ...devis, id: project.devis.length + 1, votes: 0 });
+    project.devis.push({
+      ...devis, id: (project.devis.length + 1).toString(), votes: 0,
+      siren: "",
+      budgetDetails: undefined,
+      dureeEstimee: ""
+    });
   };
 
   const handleVote = () => {

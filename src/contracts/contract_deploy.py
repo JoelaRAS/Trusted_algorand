@@ -1,65 +1,81 @@
 import base64
+import algosdk
 from algosdk.v2client import algod
-from algosdk.transaction import ApplicationCreateTxn, OnComplete, StateSchema
-from pyteal import compileTeal, Mode, Approve
+from algosdk.transaction import ApplicationCreateTxn, StateSchema
+from algosdk import account, mnemonic
 
-
-# Programme de l'approbation
-def approval_program():
-    return Approve()
-
-# Programme pour effacer l'état
-def clear_state_program():
-    return Approve()
-
-# Configuration du client pour LocalNet
-algod_address = "http://localhost:4001"
-algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # Token par défaut
+# Configuration de Nodely pour le testnet
+algod_address = "https://testnet-api.4160.nodely.dev"
+algod_token = ""
 algod_client = algod.AlgodClient(algod_token, algod_address)
 
+# Phrase mnémonique
+mnemonic_phrase = "icon retreat hour pull hen together glow fossil often blame smart defy embark normal share custom scatter lake path column gap potato chef abstract width"
+private_key = mnemonic.to_private_key(mnemonic_phrase)
+sender_address = account.address_from_private_key(private_key)
 
-# Compilation du programme PyTeal en TEAL
-approval_teal = compileTeal(approval_program(), mode=Mode.Application, version=5)
-clear_teal = compileTeal(clear_state_program(), mode=Mode.Application, version=5)
+# Charger les fichiers TEAL
+with open("approval.teal", "r") as f:
+    approval_program = f.read()
 
-# Fonction pour déployer le contrat
-def deploy_contract():
-    creator_address = "474SFCAW3BCVUBNLNDFDWJT4NABYKCDGMNPT26MJTKA2J7ZHFZF6VV5N3I"
-    creator_private_key = "tibcxXA5S7wJqRkpEQ6R8ob+wRWf4q4sP16wtLvpItjn+SKIFthFWgWraMo7JnxoA4UIZmNfPXmJmoGk/ycuSw=="
+with open("clear.teal", "r") as f:
+    clear_program = f.read()
 
-    # Paramètres de la transaction
+# Fonction pour compiler le TEAL
+# Fonction pour compiler le TEAL avec le client Algod
+def compile_program(client, source_code):
+    try:
+        compile_response = client.compile(source_code)
+        print("Réponse de la compilation :", compile_response)  # Ajout pour déboguer
+        # Décodage base64 au lieu de fromhex()
+        return base64.b64decode(compile_response["result"])
+    except Exception as e:
+        print(f"Erreur lors de la compilation du programme TEAL : {e}")
+        return None
+
+try:
+    # Compiler les programmes TEAL
+    approval_teal = compile_program(algod_client, approval_program)
+    clear_teal = compile_program(algod_client, clear_program)
+
+    # Schémas d'état global et local
+    global_schema = StateSchema(num_uints=2, num_byte_slices=1)
+    local_schema = StateSchema(num_uints=2, num_byte_slices=1)
+
+    # Récupérer les paramètres de transaction
     params = algod_client.suggested_params()
 
-    # Compilation des programmes en TEAL
-    approval_result = algod_client.compile(approval_teal)
-    clear_result = algod_client.compile(clear_teal)
-
-    # Impression des hash
-    print(f"Hash du programme d'approbation : {approval_result['hash']}")
-    print(f"Hash du programme d'effacement : {clear_result['hash']}")
-
-    approval_program_bytes = base64.b64decode(approval_result['result'])
-    clear_program_bytes = base64.b64decode(clear_result['result'])
-
+    # Créer la transaction de création d'application
     txn = ApplicationCreateTxn(
-        sender=creator_address,
+        sender=sender_address,
         sp=params,
-        on_complete=OnComplete.NoOpOC,
-        approval_program=approval_program_bytes,
-        clear_program=clear_program_bytes,
-        global_schema=StateSchema(num_uints=2, num_byte_slices=1),
-        local_schema=StateSchema(num_uints=2, num_byte_slices=1)
+        on_complete=algosdk.transaction.OnComplete.NoOpOC,
+        approval_program=approval_teal,
+        clear_program=clear_teal,
+        global_schema=global_schema,
+        local_schema=local_schema,
     )
 
-    signed_txn = txn.sign(creator_private_key)
+    # Signer et envoyer la transaction
+    signed_txn = txn.sign(private_key)
     tx_id = algod_client.send_transaction(signed_txn)
-    print(f"Transaction envoyée avec l'ID : {tx_id}")
 
-    try:
-        confirmed_txn = algod_client.pending_transaction_info(tx_id)
-        print(f"Contrat déployé avec l'App ID : {confirmed_txn['application-index']}")
-    except Exception as e:
-        print(f"Erreur lors de la confirmation de la transaction : {e}")
+    # Attendre la confirmation de la transaction
+    def wait_for_confirmation(client, txid):
+        last_round = client.status().get("last-round")
+        while True:
+            tx_info = client.pending_transaction_info(txid)
+            if tx_info.get("confirmed-round") and tx_info["confirmed-round"] > 0:
+                print("Transaction confirmée dans le round", tx_info["confirmed-round"])
+                return tx_info
+            else:
+                print("En attente de confirmation...")
+                last_round += 1
+                client.status_after_block(last_round)
 
-if __name__ == "__main__":
-    deploy_contract()
+    tx_info = wait_for_confirmation(algod_client, tx_id)
+    app_id = tx_info["application-index"]
+    print("Application ID:", app_id)
+
+except Exception as e:
+    print(f"Erreur lors du déploiement du contrat : {e}")

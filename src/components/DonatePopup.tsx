@@ -26,15 +26,16 @@ export const DonatePopup: React.FC<DonatePopupProps> = ({ onSubmit }) => {
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Faire un don</DialogTitle>
+            <DialogTitle>Faire un don (en Algorand)</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input
               type="number"
-              placeholder="Montant en €"
+              placeholder="Montant en Algorand"
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
             />
+            <p className="text-sm text-gray-600">Valeur en euros : {(amount * 1.5).toFixed(2)} €</p> {/* Exemple de conversion */}
           </div>
           <Button onClick={handleSubmit}>Soumettre</Button>
         </DialogContent>

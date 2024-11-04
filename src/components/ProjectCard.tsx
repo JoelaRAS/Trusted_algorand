@@ -1,51 +1,37 @@
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { useNavigate } from "react-router-dom";
-import { CardButtons } from "./project/card/CardButtons";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export type ProjectStatus = "Appel d'offre" | "En financement" | "En cours";
 
 interface ProjectCardProps {
   id: string;
   title: string;
-  image?: string;
-  summary: string;
+  description: string;
+  category: string;
+  impact: string;
+  location: string;
   status: ProjectStatus;
-  currentAmount?: number;
+  currentAmount: number;
   targetAmount: number;
-  provider?: string;
-  lastUpdate?: string;
-  devis?: any[];
-  donateurs?: any[];
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({
-  id,
-  title,
-  image,
-  summary,
-  status,
-  currentAmount = 0,
-  targetAmount,
-  provider,
-  lastUpdate,
-  devis,
-  donateurs,
-}) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ id, title, description, category, impact, location, status, currentAmount, targetAmount }) => {
   const navigate = useNavigate();
   const progress = (currentAmount / targetAmount) * 100;
 
-  const handleDonate = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDonate = (amount: number) => {
+    // Logique pour gérer le don
+    console.log(`Don de ${amount} € pour le projet ${title}`);
   };
 
-  const handleSubmitDevis = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleSubmitDevis = (devis: { prestataire: string; description: string; budget: number }) => {
+    // Logique pour gérer la soumission de devis
+    console.log(`Devis soumis pour le projet ${title}`, devis);
   };
 
-  const handleVote = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleVote = () => {
+    // Logique pour gérer le vote
+    console.log(`Vote pour le projet ${title}`);
   };
 
   const getStatusColor = (status: ProjectStatus) => {
@@ -53,78 +39,28 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       case "Appel d'offre":
         return "bg-blue-500";
       case "En financement":
-        return "bg-violet-500";
+        return "bg-green-500";
       case "En cours":
-        return "bg-orange-500";
+        return "bg-yellow-500";
       default:
         return "bg-gray-500";
     }
   };
 
   return (
-    <Card 
-      className="w-full max-w-sm hover:shadow-lg transition-shadow duration-200 cursor-pointer flex flex-col"
-      onClick={() => navigate(`/project/${id}`)}
-    >
-      {image && (
-        <div className="relative h-48 w-full">
-          <img 
-            src={image} 
-            alt={title} 
-            className="w-full h-full object-cover rounded-t-lg"
-          />
-        </div>
-      )}
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <h3 className="text-xl font-semibold">{title}</h3>
-          <Badge className={getStatusColor(status)}>{status}</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4 flex-grow">
-        <p className="text-sm text-gray-600 line-clamp-2">{summary}</p>
-        
-        {status === "En financement" && (
-          <div className="space-y-2">
-            <Progress value={progress} />
-            <p className="text-sm text-right">
-              {currentAmount.toLocaleString()} / {targetAmount.toLocaleString()} €
-            </p>
-          </div>
-        )}
-
-        {status === "Appel d'offre" && devis && (
-          <div className="space-y-2">
-            <p className="text-sm">
-              <span className="font-semibold">{devis.length}</span> devis soumis
-            </p>
-          </div>
-        )}
-
-        {status === "En cours" && provider && (
-          <div className="space-y-2">
-            <p className="text-sm">
-              <span className="font-semibold">Prestataire:</span> {provider}
-            </p>
-            {lastUpdate && (
-              <p className="text-sm">
-                <span className="font-semibold">Dernière mise à jour:</span> {lastUpdate}
-              </p>
-            )}
-          </div>
-        )}
-      </CardContent>
-      <CardFooter>
-        <CardButtons 
-          status={status}
-          title={title}
-          devis={devis}
-          handleDonate={handleDonate}
-          handleSubmitDevis={handleSubmitDevis}
-          handleVote={handleVote}
-        />
-      </CardFooter>
-    </Card>
+    <div className="border rounded-lg p-4 shadow-md">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <p className="text-gray-600">{description}</p>
+      <p className="text-gray-600">Catégorie: {category}</p>
+      <p className="text-gray-600">Impact: {impact}</p>
+      <p className="text-gray-600">Emplacement: {location}</p>
+      <p className={`text-white ${getStatusColor(status)}`}>Statut: {status}</p>
+      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+      </div>
+      <button onClick={() => handleDonate(10)} className="bg-blue-500 text-white px-4 py-2 rounded">Donner 10€</button>
+      <button onClick={handleVote} className="bg-green-500 text-white px-4 py-2 rounded ml-2">Voter</button>
+    </div>
   );
 };
 

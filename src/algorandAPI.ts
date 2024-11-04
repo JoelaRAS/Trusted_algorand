@@ -2,13 +2,12 @@ import algosdk from 'algosdk';
 import { algodToken, algodServer, algodPort } from './algorandConfig';
 
 const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
-const appId = 1002; // ID de votre application Algorand
-const creatorAddress = "YO3VYQKJ45XILV2GVDO44LM2IGPUD2QYRXNFX5K4ZDC2B4BD4ZZXU5AQG24"; // Remplacez par l'adresse du créateur de l'application
+const appId = 1002; // Remplacez par l'ID de votre application Algorand
 
 // Fonction pour récupérer les transactions d'application
 export const getApplicationTransactions = async () => {
   try {
-    const response = await algodClient.accountTransactionHistory(creatorAddress).do();
+    const response = await algodClient.getApplicationByID(appId).do();
     const transactions = response.transactions;
 
     // Filtrer les transactions d'appel d'application et de l'ID de l'application

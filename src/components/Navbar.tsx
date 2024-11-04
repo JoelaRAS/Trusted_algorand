@@ -1,26 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import algosdk from 'algosdk';
+import { useWallet } from '@/components/WalletContext';
 
-// Adresse et mnémonique de test pour LocalNet
-const mnemonic = "hip social weird deal identify job shy pave dwarf crane capable little phrase snow exchange badge chicken perfect barely whisper cricket puppy core able best";
-const account = algosdk.mnemonicToSecretKey(mnemonic);
-const walletAddress: string = account.addr.toString();
-
-const Navbar = () => {
-  const [connectedAddress, setConnectedAddress] = useState<string | null>(null);
+const Navbar: React.FC = () => {
+  const { walletAddress, connectWallet, disconnectWallet } = useWallet();
   const navigate = useNavigate();
 
-  const connectLocalWallet = async () => {
-    // Connexion directe en utilisant l’adresse du wallet
-    setConnectedAddress(walletAddress);
-    alert(`Connecté avec succès : ${walletAddress}`);
-  };
-
   const handleSubmitProjectClick = () => {
-    if (connectedAddress) {
-      navigate('/submit-project', { state: { walletAddress: connectedAddress } });
+    if (walletAddress) {
+      navigate('/submit-project', { state: { walletAddress } });
     } else {
       alert('Veuillez connecter votre wallet d\'abord.');
     }
@@ -40,8 +29,8 @@ const Navbar = () => {
           <Button variant="ghost" onClick={handleSubmitProjectClick}>
             Soumettre un projet
           </Button>
-          <Button className="flex items-center gap-2" onClick={connectLocalWallet}>
-            {connectedAddress ? `Connecté: ${connectedAddress}` : 'Connecter Wallet Local'}
+          <Button className="flex items-center gap-2" onClick={walletAddress ? disconnectWallet : connectWallet}>
+            {walletAddress ? `Connecté: ${walletAddress}` : 'Connecter Pera Wallet'}
           </Button>
         </div>
       </div>

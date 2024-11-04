@@ -1,3 +1,8 @@
+
+
+
+// src/types/project.ts
+import { ReactNode } from 'react';
 export type ProjectStatus = "Appel d'offre" | "En financement" | "En cours";
 
 export interface BudgetDetail {
@@ -39,26 +44,62 @@ export interface Update {
   title: string;
   content: string;
 }
+export interface ProjectCardProps {
 
-export interface Project {
-  id: string; // Suppression de `| undefined` pour éviter des erreurs de manipulation.
+  id: string;
+
   title: string;
-  image?: string; // Représentation URL ou chemin local de l'image du projet
+
   description: string;
-  status: ProjectStatus;
-  currentAmount: number; // Montant total des dons actuels
-  targetAmount: number;  // Montant cible du financement
-  category?: string;
-  impact?: string;
-  location?: string;
-  devis: Devis[];  // Liste des devis soumis
-  selectedDevis?: Devis; // Devis choisi pour le projet
-  donateurs: Donateur[]; // Liste des donateurs avec montant de don
-  contract?: Contract;  // Contrat établi pour le projet
-  updates: Update[];    // Liste des mises à jour du projet
+
+  category: string;
+
+  impact: string;
+
+  location: string;
+
+  status: string;
+
 }
 
 
+
+export interface Project {
+  selectedDevis: any;
+  category: ReactNode;
+  location: ReactNode;
+
+  id: string;
+
+  title: string;
+
+  description: string;
+
+  status: string;
+
+  currentAmount: number;
+
+  targetAmount: number;
+
+  devis?: {
+    siren: ReactNode;
+    budgetDetails: any;
+    dureeEstimee: ReactNode; id: string; prestataire: string; budget: number; description: string; votes: number; 
+}[];
+
+  donateurs?: { id: string; name: string; amount: number; }[];
+
+  impact?: string;
+
+  provider?: string;
+
+  lastUpdate?: string;
+
+  contract?: { description: string; amount: number; terms: string; };
+
+  updates?: { date: string; title: string; content: string; }[];
+
+}
 
 // utils.ts ou types/project.ts (comme tu préfères)
 export const mapStatus = (status: number): string => {

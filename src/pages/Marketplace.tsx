@@ -1,81 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import ProjectCard from "@/components/ProjectCard";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "../components/ui/input";
+import ProjectCard from "../components/ProjectCard";
+import { Badge } from "../components/ui/badge";
+import { fetchProjectsFromBlockchain } from "../algorandServices";
 
 type ProjectStatus = "Appel d'offre" | "En financement" | "En cours";
 
 const Marketplace = () => {
+  const [projects, setProjects] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Exemple de données (à remplacer par un appel API)
-  const projects = [
-    {
-      id: "1",
-      title: "École Rurale Solaire",
-      summary: "Installation de panneaux solaires pour une école rurale, permettant l'accès à l'électricité et aux ressources numériques.",
-      status: "En financement" as const,
-      currentAmount: 5000,
-      targetAmount: 10000,
-      devis: [],
-      donateurs: [
-        { id: "1", name: "Alice Martin", amount: 1000 },
-        { id: "2", name: "Bob Dupont", amount: 500 },
-      ],
-    },
-    {
-      id: "2",
-      title: "Potager Communautaire",
-      summary: "Création d'un potager communautaire pour favoriser l'autonomie alimentaire et le lien social.",
-      status: "Appel d'offre" as const,
-      targetAmount: 8000,
-      devis: [
-        {
-          id: "1",
-          prestataire: "Green Gardens",
-          budget: 7500,
-          description: "Installation complète avec système d'irrigation",
-          votes: 12,
-        },
-        {
-          id: "2",
-          prestataire: "Urban Farms",
-          budget: 8000,
-          description: "Installation avec serre et formation",
-          votes: 8,
-        },
-      ],
-    },
-    {
-      id: "3",
-      title: "Centre Médical Mobile",
-      summary: "Équipement d'une clinique mobile pour des soins médicaux dans les zones rurales.",
-      status: "En cours" as const,
-      targetAmount: 15000,
-      provider: "Médecins Sans Frontières",
-      lastUpdate: "Étape 2/4 terminée",
-      contract: {
-        description: "Fourniture et équipement d'une unité mobile médicale",
-        amount: 15000,
-        terms: "Livraison en 4 étapes sur 6 mois",
-      },
-      updates: [
-        {
-          date: "2024-02-20",
-          title: "Acquisition du véhicule",
-          content: "Le véhicule de base a été acquis et est en cours d'aménagement.",
-        },
-      ],
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await fetchProjectsFromBlockchain();
+      setProjects(data);
+    };
+
+    fetchData();
+  }, []);
 
   const filteredProjects = projects.filter(project => {
     const matchesStatus = !selectedStatus || project.status === selectedStatus;
-    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.summary.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -115,7 +63,7 @@ const Marketplace = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProjects.map((project) => (
-          <ProjectCard key={project.id} {...project} />
+          <ProjectCard summary={""} key={project.id} {...project} status={project.status as ProjectStatus} />
         ))}
       </div>
     </div>
@@ -123,4 +71,3 @@ const Marketplace = () => {
 };
 
 export default Marketplace;
-

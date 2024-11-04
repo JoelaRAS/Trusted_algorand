@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .border-border {
+    border-color: #e5e7eb; /* Exemple de couleur de bordure */
+  }
+}
 @layer base {
   :root {
     --background: 0 0% 100%;
