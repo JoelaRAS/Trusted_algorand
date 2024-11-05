@@ -60,7 +60,7 @@ To set up the project locally:
     Set up Tailwind CSS:
 
 3.**Start the development server:**:
-    ````bash
+    ```bash
     npm run dev
 
 ## Features
